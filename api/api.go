@@ -37,7 +37,7 @@ func (h *MessageHandler) WireHttpHandler() http.Handler {
 // type threadParam struct {
 // 	Topic string `json:"topic"`
 // }
-
+// this function is used to create a customer
 func (h *MessageHandler) handleCreateCustomer(c *gin.Context) {
 	var req repo.CreateCustomerParams
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
