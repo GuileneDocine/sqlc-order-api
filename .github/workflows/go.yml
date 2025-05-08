@@ -1,4 +1,3 @@
-
 # This workflow automates CI for the PostgreSQL project
 # It scans for vulnerabilities, lints the code, runs tests, and builds the Go binary.
 
@@ -31,11 +30,23 @@ jobs:
     runs-on: ubuntu-latest
     name: Run Vulnerability Check
     steps:
-      - id: govulncheck
-        uses: golang/govulncheck-action@v1
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version-input: '1.22'
-          go-package: './...'
+          go-version: '1.22'
+      
+      # Ensure modules are tidy and all dependencies are downloaded
+      - name: Download Go Modules
+        run: |
+          go mod tidy
+          go mod download
+
+      # Now run the vulnerability check
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck -C . -format text ./...
 
   test:
     runs-on: ubuntu-latest
@@ -49,7 +60,7 @@ jobs:
           go-version: '1.22'
 
       - name: Install dependencies
-        run: go get .
+        run: go mod tidy
 
       - name: Run Tests
         run: go test -v ./...
