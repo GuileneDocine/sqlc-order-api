@@ -1,34 +1,45 @@
--- name: CreateMessage :one
-INSERT INTO message (thread_id, sender, content)
+-- name: CreateCustomer :one
+INSERT INTO customer (name, phone, email)
 VALUES ($1, $2, $3)
 RETURNING *;
 
--- name: CreateThread :one
-INSERT INTO thread (topic)
-VALUES ($1)
+-- name: CreateProduct :one
+INSERT INTO product (name, stock, price)
+VALUES ($1, $2, $3)
 RETURNING *;
 
--- name: GetMessageByID :one
-SELECT * FROM message
-WHERE id = $1;
+-- name: CreateOrder :one
+INSERT INTO "order" (customer_id, product_id, quantity,total_price)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
 
--- name: GetMessagesByThread :many
-SELECT * FROM message
-WHERE thread_id = $1
-ORDER BY created_at DESC;
-
--- name: DeleteMessage :exec
-DELETE FROM message WHERE id = $1;
-
--- name: UpdateMessage :exec
-UPDATE message 
-SET content = $2
+-- name: UpdateCustomer :many
+UPDATE customer 
+SET name =$2,
+    phone= $3,
+    email = $4
 WHERE id = $1
 RETURNING *;
 
--- name: GetThreadById :one
-SELECT * FROM thread
+-- name: UpdateProduct :many
+UPDATE product 
+SET name = $2,
+    stock = $3,
+    price = $4
+WHERE id = $1
+RETURNING *;
+
+-- name: GetOrder :one
+SELECT *
+FROM "order"
 WHERE id = $1;
 
--- name: DeleteAll :exec
-DELETE FROM message;    
+-- name: GetCustomersByNameLike :many
+SELECT *
+FROM customer
+WHERE name LIKE $1;
+
+-- name: GetTotalRevenueForProduct :one
+SELECT SUM(total_price)
+FROM "order"
+WHERE product_id = $1;

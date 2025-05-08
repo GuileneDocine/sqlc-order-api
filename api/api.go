@@ -1,7 +1,7 @@
 package api
 
 import (
-	"database/sql"
+
 	"net/http"
 
 	"github.com/Iknite-Space/sqlc-example-api/db/repo"
@@ -26,38 +26,36 @@ func (h *MessageHandler) WireHttpHandler() http.Handler {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	})) //prevents the server from crashing if an error occurs in any route
 
-	r.POST("/message", h.handleCreateMessage)
-	r.GET("/message/:id", h.handleGetMessage)
-	r.GET("/thread/:id/messages", h.handleGetThreadMessages)
-	r.POST("/thread", h.handleCreateThread)
-	r.DELETE("/message/:id", h.handleDeleteMessage)
-	r.PATCH("/message", h.handleUpdateMessage)
+	r.POST("/customer", h.handleCreateCustomer)
+	r.POST("/Order", h.handleCreateOrder)
+
+	r.POST("/product", h.handleCreateProduct)
 
 	return r
 }
 
-type threadParam struct {
-	Topic string `json:"topic"`
-}
+// type threadParam struct {
+// 	Topic string `json:"topic"`
+// }
 
-func (h *MessageHandler) handleCreateThread(c *gin.Context) {
-	var req threadParam
+func (h *MessageHandler) handleCreateCustomer(c *gin.Context) {
+	var req repo.CreateCustomerParams
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	thread, err := h.querier.CreateThread(c, &req.Topic)
+	customer, err := h.querier.CreateCustomer(c, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, thread)
+	c.JSON(http.StatusOK, customer)
 }
 
-func (h *MessageHandler) handleCreateMessage(c *gin.Context) {
-	var req repo.CreateMessageParams
+func (h *MessageHandler) handleCreateOrder(c *gin.Context) {
+	var req repo.CreateOrderParams
 	err := c.ShouldBindBodyWithJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -65,25 +63,34 @@ func (h *MessageHandler) handleCreateMessage(c *gin.Context) {
 	}
 
 	//check if the thread exist
-	_, err = h.querier.GetThreadById(c, *req.ThreadID)
+	order, err := h.querier.CreateOrder(c, req)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "No row found for this thread id"})
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusBadRequest, err.Error())
+
+	c.JSON(http.StatusOK, order)
+}
+
+
+func (h *MessageHandler) handleCreateProduct(c *gin.Context) {
+	var req repo.CreateProductParams
+	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	message, err := h.querier.CreateMessage(c, req)
+	product, err := h.querier.CreateProduct(c, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, message)
+	c.JSON(http.StatusOK, product)
 }
 
+
+/*
 func (h *MessageHandler) handleGetMessage(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -149,3 +156,4 @@ func (h *MessageHandler) handleUpdateMessage(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"success": "Message updated successfully"})
 }
+*/

@@ -7,103 +7,113 @@ package repo
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createMessage = `-- name: CreateMessage :one
-INSERT INTO message (thread_id, sender, content)
+const createCustomer = `-- name: CreateCustomer :one
+INSERT INTO customer (name, phone, email)
 VALUES ($1, $2, $3)
-RETURNING id, sender, content, created_at, thread_id
+RETURNING id, name, phone, email, created_at
 `
 
-type CreateMessageParams struct {
-	ThreadID *string `json:"thread_id"`
-	Sender   string  `json:"sender"`
-	Content  string  `json:"content"`
+type CreateCustomerParams struct {
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+	Email string `json:"email"`
 }
 
-func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
-	row := q.db.QueryRow(ctx, createMessage, arg.ThreadID, arg.Sender, arg.Content)
-	var i Message
+func (q *Queries) CreateCustomer(ctx context.Context, arg CreateCustomerParams) (Customer, error) {
+	row := q.db.QueryRow(ctx, createCustomer, arg.Name, arg.Phone, arg.Email)
+	var i Customer
 	err := row.Scan(
 		&i.ID,
-		&i.Sender,
-		&i.Content,
+		&i.Name,
+		&i.Phone,
+		&i.Email,
 		&i.CreatedAt,
-		&i.ThreadID,
 	)
 	return i, err
 }
 
-const createThread = `-- name: CreateThread :one
-INSERT INTO thread (topic)
-VALUES ($1)
-RETURNING id, topic, created_at
+const createOrder = `-- name: CreateOrder :one
+INSERT INTO "order" (customer_id, product_id, quantity,total_price)
+VALUES ($1, $2, $3, $4)
+RETURNING id, customer_id, product_id, quantity, total_price, created_at
 `
 
-func (q *Queries) CreateThread(ctx context.Context, topic *string) (Thread, error) {
-	row := q.db.QueryRow(ctx, createThread, topic)
-	var i Thread
-	err := row.Scan(&i.ID, &i.Topic, &i.CreatedAt)
-	return i, err
+type CreateOrderParams struct {
+	CustomerID *string        `json:"customer_id"`
+	ProductID  *string        `json:"product_id"`
+	Quantity   string         `json:"quantity"`
+	TotalPrice pgtype.Numeric `json:"total_price"`
 }
 
-const deleteAll = `-- name: DeleteAll :exec
-DELETE FROM message
-`
-
-func (q *Queries) DeleteAll(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, deleteAll)
-	return err
-}
-
-const deleteMessage = `-- name: DeleteMessage :exec
-DELETE FROM message WHERE id = $1
-`
-
-func (q *Queries) DeleteMessage(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, deleteMessage, id)
-	return err
-}
-
-const getMessageByID = `-- name: GetMessageByID :one
-SELECT id, sender, content, created_at, thread_id FROM message
-WHERE id = $1
-`
-
-func (q *Queries) GetMessageByID(ctx context.Context, id string) (Message, error) {
-	row := q.db.QueryRow(ctx, getMessageByID, id)
-	var i Message
+func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {
+	row := q.db.QueryRow(ctx, createOrder,
+		arg.CustomerID,
+		arg.ProductID,
+		arg.Quantity,
+		arg.TotalPrice,
+	)
+	var i Order
 	err := row.Scan(
 		&i.ID,
-		&i.Sender,
-		&i.Content,
+		&i.CustomerID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.TotalPrice,
 		&i.CreatedAt,
-		&i.ThreadID,
 	)
 	return i, err
 }
 
-const getMessagesByThread = `-- name: GetMessagesByThread :many
-SELECT id, sender, content, created_at, thread_id FROM message
-WHERE thread_id = $1
-ORDER BY created_at DESC
+const createProduct = `-- name: CreateProduct :one
+INSERT INTO product (name, stock, price)
+VALUES ($1, $2, $3)
+RETURNING id, name, stock, price, created_at
 `
 
-func (q *Queries) GetMessagesByThread(ctx context.Context, threadID *string) ([]Message, error) {
-	rows, err := q.db.Query(ctx, getMessagesByThread, threadID)
+type CreateProductParams struct {
+	Name  string `json:"name"`
+	Stock string `json:"stock"`
+	Price string `json:"price"`
+}
+
+func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
+	row := q.db.QueryRow(ctx, createProduct, arg.Name, arg.Stock, arg.Price)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Stock,
+		&i.Price,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getCustomersByNameLike = `-- name: GetCustomersByNameLike :many
+SELECT id, name, phone, email, created_at
+FROM customer
+WHERE name LIKE $1
+`
+
+func (q *Queries) GetCustomersByNameLike(ctx context.Context, name string) ([]Customer, error) {
+	rows, err := q.db.Query(ctx, getCustomersByNameLike, name)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Message{}
+	items := []Customer{}
 	for rows.Next() {
-		var i Message
+		var i Customer
 		if err := rows.Scan(
 			&i.ID,
-			&i.Sender,
-			&i.Content,
+			&i.Name,
+			&i.Phone,
+			&i.Email,
 			&i.CreatedAt,
-			&i.ThreadID,
 		); err != nil {
 			return nil, err
 		}
@@ -115,31 +125,129 @@ func (q *Queries) GetMessagesByThread(ctx context.Context, threadID *string) ([]
 	return items, nil
 }
 
-const getThreadById = `-- name: GetThreadById :one
-SELECT id, topic, created_at FROM thread
+const getOrder = `-- name: GetOrder :one
+SELECT id, customer_id, product_id, quantity, total_price, created_at
+FROM "order"
 WHERE id = $1
 `
 
-func (q *Queries) GetThreadById(ctx context.Context, id string) (Thread, error) {
-	row := q.db.QueryRow(ctx, getThreadById, id)
-	var i Thread
-	err := row.Scan(&i.ID, &i.Topic, &i.CreatedAt)
+func (q *Queries) GetOrder(ctx context.Context, id string) (Order, error) {
+	row := q.db.QueryRow(ctx, getOrder, id)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.CustomerID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.TotalPrice,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
-const updateMessage = `-- name: UpdateMessage :exec
-UPDATE message 
-SET content = $2
-WHERE id = $1
-RETURNING id, sender, content, created_at, thread_id
+const getTotalRevenueForProduct = `-- name: GetTotalRevenueForProduct :one
+SELECT SUM(total_price)
+FROM "order"
+WHERE product_id = $1
 `
 
-type UpdateMessageParams struct {
-	ID      string `json:"id"`
-	Content string `json:"content"`
+func (q *Queries) GetTotalRevenueForProduct(ctx context.Context, productID *string) (int64, error) {
+	row := q.db.QueryRow(ctx, getTotalRevenueForProduct, productID)
+	var sum int64
+	err := row.Scan(&sum)
+	return sum, err
 }
 
-func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) error {
-	_, err := q.db.Exec(ctx, updateMessage, arg.ID, arg.Content)
-	return err
+const updateCustomer = `-- name: UpdateCustomer :many
+UPDATE customer 
+SET name =$2,
+    phone= $3,
+    email = $4
+WHERE id = $1
+RETURNING id, name, phone, email, created_at
+`
+
+type UpdateCustomerParams struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+	Email string `json:"email"`
+}
+
+func (q *Queries) UpdateCustomer(ctx context.Context, arg UpdateCustomerParams) ([]Customer, error) {
+	rows, err := q.db.Query(ctx, updateCustomer,
+		arg.ID,
+		arg.Name,
+		arg.Phone,
+		arg.Email,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Customer{}
+	for rows.Next() {
+		var i Customer
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Phone,
+			&i.Email,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateProduct = `-- name: UpdateProduct :many
+UPDATE product 
+SET name = $2,
+    stock = $3,
+    price = $4
+WHERE id = $1
+RETURNING id, name, stock, price, created_at
+`
+
+type UpdateProductParams struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Stock string `json:"stock"`
+	Price string `json:"price"`
+}
+
+func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, updateProduct,
+		arg.ID,
+		arg.Name,
+		arg.Stock,
+		arg.Price,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Product{}
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Stock,
+			&i.Price,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
