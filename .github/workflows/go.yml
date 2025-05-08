@@ -20,7 +20,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.8'
+          go-version: '1.22'
       
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v2
@@ -34,7 +34,7 @@ jobs:
       - id: govulncheck
         uses: golang/govulncheck-action@v1
         with:
-          go-version-input: '1.23.8'
+          go-version-input: '1.22'
           go-package: './...'
 
   test:
@@ -46,7 +46,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.8'
+          go-version: '1.22'
 
       - name: Install dependencies
         run: go get .
@@ -63,7 +63,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.8'
+          go-version: '1.22'
 
       - name: Build
         run: go build -v ./...
