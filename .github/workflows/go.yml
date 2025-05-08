@@ -26,16 +26,14 @@ jobs:
         with:
           version: v1.49.0  
 
-  govulncheck_job:
+  govulncheck:
     runs-on: ubuntu-latest
-    name: Run Vulnerability Check
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: golang/govulncheck-action@v1
         with:
-          go-version: '1.22'
-      
+          go-version-input: 1.22
+          go-package: ./...
       # Ensure modules are tidy and all dependencies are downloaded
       - name: Download Go Modules
         run: |
@@ -50,7 +48,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    needs: [golangci, govulncheck_job]  # Ensure tests run only after linting and vulnerability check
+    needs: [golangci, govulncheck]  # Ensure tests run only after linting and vulnerability check
     steps:
       - uses: actions/checkout@v4
 
