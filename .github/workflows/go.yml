@@ -1,7 +1,8 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go
+# This workflow automates CI for the PostgreSQL project
+# It scans for vulnerabilities, lints the code, runs tests, and builds the Go binary.
+
+name: CI
 
 on:
   push:
@@ -28,7 +29,7 @@ jobs:
 
   govulncheck_job:
     runs-on: ubuntu-latest
-    name: Run govulncheck
+    name: Run Vulnerability Check
     steps:
       - id: govulncheck
         uses: golang/govulncheck-action@v1
@@ -36,9 +37,26 @@ jobs:
           go-version-input: '1.23.8'
           go-package: './...'
 
+  test:
+    runs-on: ubuntu-latest
+    needs: [golangci, govulncheck_job]  # Ensure tests run only after linting and vulnerability check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.8'
+
+      - name: Install dependencies
+        run: go get .
+
+      - name: Run Tests
+        run: go test -v ./...
+
   build:
     runs-on: ubuntu-latest
-    needs: [test, govulncheck_job]  # Ensure this job runs only after lint and vulnerability check
+    needs: [test]  # Only build after tests have passed
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +67,3 @@ jobs:
 
       - name: Build
         run: go build -v ./...
-
-      - name: Test
-        run: go test -v ./...
