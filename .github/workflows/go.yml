@@ -53,15 +53,15 @@ jobs:
         with:
           go-version: '1.23.8'
 
-      - name: Install dependencies
-        run: go get .
+      # - name: Install dependencies
+      #   run: go get .
 
       - name: Run Tests
         run: go test -v ./...
 
   build:
     runs-on: ubuntu-latest
-    needs:  [golangci, govulncheck_job]   # Only build after tests/govulcheck have passed
+    needs:  [test, govulncheck_job]   # Only build after tests/govulcheck have passed
     steps:
       - uses: actions/checkout@v4
 
