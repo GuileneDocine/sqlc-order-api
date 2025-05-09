@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/Iknite-Space/sqlc-example-api/db/repo"
@@ -26,58 +25,155 @@ func (h *MessageHandler) WireHttpHandler() http.Handler {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	})) //prevents the server from crashing if an error occurs in any route
 
-	r.POST("/message", h.handleCreateMessage)
-	
+	r.POST("/customer", h.handleCreateCustomer)
+	r.POST("/product", h.handleCreateProduct)
+	r.POST("/order", h.handleCreateOrder)
 
+	r.GET("/customer/:id", h.handleGetCustomerById)
+	r.GET("/order/:id", h.handleGetOrderById)
+	r.GET("/product/:id", h.handleGETProductById)
+	r.GET("/products/", h.handleGetAllProducts)
+
+	r.PATCH("/product/:id", h.handleUpdateByIdProduct)
+	r.DELETE("/customer/:id", h.handleDeleteCustomer)
 	return r
 }
 
-type threadParam struct {
-	Topic string `json:"topic"`
-}
-
-func (h *MessageHandler) handleCreateThread(c *gin.Context) {
-	var req threadParam
+func (h *MessageHandler) handleCreateCustomer(c *gin.Context) {
+	var req repo.CreateCustomerParams
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	thread, err := h.querier.CreateThread(c, &req.Topic)
+	customer, err := h.querier.CreateCustomer(c, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, thread)
+	c.JSON(http.StatusOK, customer)
 }
 
-func (h *MessageHandler) handleCreateMessage(c *gin.Context) {
-	var req repo.CreateMessageParams
-	err := c.ShouldBindBodyWithJSON(&req)
-	if err != nil {
+func (h *MessageHandler) handleCreateProduct(c *gin.Context) {
+	var req repo.CreateProductParams
+	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	//check if the thread exist
-	_, err = h.querier.GetThreadById(c, *req.ThreadID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "No row found for this thread id"})
-			return
-		}
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
-
-	message, err := h.querier.CreateMessage(c, req)
+	product, err := h.querier.CreateProduct(c, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, message)
+	c.JSON(http.StatusOK, product)
 }
 
+func (h *MessageHandler) handleCreateOrder(c *gin.Context) {
+	var req repo.CreateOrderParams
+	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
+	order, err := h.querier.CreateOrder(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, order)
+}
+
+func (h *MessageHandler) handleGetCustomerById(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Id is required"})
+		return
+	}
+
+	customer, err := h.querier.GetCustomerByID(c, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, customer)
+}
+
+func (h *MessageHandler) handleGetOrderById(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Id is required"})
+		return
+	}
+
+	order, err := h.querier.GetOrderById(c, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, order)
+}
+
+func (h *MessageHandler) handleGETProductById(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Id is required"})
+		return
+	}
+
+	product, err := h.querier.GetProductById(c, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
+}
+
+func (h *MessageHandler) handleUpdateByIdProduct(c *gin.Context) {
+	var req repo.UpdateByIdProductParams
+	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	customer, err := h.querier.UpdateByIdProduct(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, customer)
+}
+
+func (h *MessageHandler) handleGetAllProducts(c *gin.Context) {
+
+	product, err := h.querier.GetAllProducts(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
+}
+
+func (h *MessageHandler) handleDeleteCustomer(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Id is required"})
+		return
+	}
+
+	err := h.querier.DeleteCustomer(c, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"Success": "Customer deleted successfully"})
+}
