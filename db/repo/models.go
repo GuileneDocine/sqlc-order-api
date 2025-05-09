@@ -8,16 +8,28 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Message struct {
+type Customer struct {
 	ID        string           `json:"id"`
-	Sender    string           `json:"sender"`
-	Content   string           `json:"content"`
+	Name      string           `json:"name"`
+	Phone     string           `json:"phone"`
+	Email     string           `json:"email"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
-	ThreadID  *string          `json:"thread_id"`
 }
 
-type Thread struct {
+type Order struct {
+	ID          string           `json:"id"`
+	CustomerID  string           `json:"customer_id"`
+	ProductID   string           `json:"product_id"`
+	Price       pgtype.Numeric   `json:"price"`
+	Quantity    int32            `json:"quantity"`
+	OrderStatus *string          `json:"order_status"`
+	OrderDATE   pgtype.Timestamp `json:"order_DATE"`
+}
+
+type Product struct {
 	ID        string           `json:"id"`
-	Topic     *string          `json:"topic"`
+	Name      string           `json:"name"`
+	Price     pgtype.Numeric   `json:"price"`
+	Stock     int32            `json:"stock"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 }

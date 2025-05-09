@@ -9,14 +9,15 @@ import (
 )
 
 type Querier interface {
-	CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error)
-	CreateThread(ctx context.Context, topic *string) (Thread, error)
-	DeleteAll(ctx context.Context) error
-	DeleteMessage(ctx context.Context, id string) error
-	GetMessageByID(ctx context.Context, id string) (Message, error)
-	GetMessagesByThread(ctx context.Context, threadID *string) ([]Message, error)
-	GetThreadById(ctx context.Context, id string) (Thread, error)
-	UpdateMessage(ctx context.Context, arg UpdateMessageParams) error
+	CreateCustomer(ctx context.Context, arg CreateCustomerParams) ([]Customer, error)
+	CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error)
+	CreateProduct(ctx context.Context, arg CreateProductParams) ([]Product, error)
+	DeleteCustomer(ctx context.Context, id string) error
+	GetAllProducts(ctx context.Context) ([]Product, error)
+	GetCustomerByID(ctx context.Context, id string) (Customer, error)
+	GetOrderById(ctx context.Context, id string) (Order, error)
+	GetProductById(ctx context.Context, id string) ([]GetProductByIdRow, error)
+	UpdateByIdProduct(ctx context.Context, arg UpdateByIdProductParams) (Product, error)
 }
 
 var _ Querier = (*Queries)(nil)

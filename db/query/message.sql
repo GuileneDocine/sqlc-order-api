@@ -1,34 +1,39 @@
--- name: CreateMessage :one
-INSERT INTO message (thread_id, sender, content)
+-- name: CreateCustomer :many
+INSERT INTO "Customer" (name, phone, email)
 VALUES ($1, $2, $3)
 RETURNING *;
 
--- name: CreateThread :one
-INSERT INTO thread (topic)
-VALUES ($1)
+-- name: CreateProduct :many
+INSERT INTO "Product" (name, price, stock)
+VALUES ($1, $2, $3)
 RETURNING *;
 
--- name: GetMessageByID :one
-SELECT * FROM message
+-- name: CreateOrder :one
+INSERT INTO "Order" ( customer_id, product_id, price, quantity, order_status)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING *;
+
+-- name: GetCustomerByID :one
+SELECT * FROM "Customer"
 WHERE id = $1;
 
--- name: GetMessagesByThread :many
-SELECT * FROM message
-WHERE thread_id = $1
-ORDER BY created_at DESC;
+-- name: GetAllProducts :many
+SELECT * FROM "Product"
+ORDER BY name ASC;
 
--- name: DeleteMessage :exec
-DELETE FROM message WHERE id = $1;
+-- name: DeleteCustomer :exec
+DELETE FROM "Customer" WHERE id = $1;
 
--- name: UpdateMessage :exec
-UPDATE message 
-SET content = $2
+-- name: UpdateByIdProduct :one
+UPDATE "Product" 
+SET price = $2, stock = $3
 WHERE id = $1
 RETURNING *;
 
--- name: GetThreadById :one
-SELECT * FROM thread
+-- name: GetOrderById :one
+SELECT * FROM "Order"
 WHERE id = $1;
 
--- name: DeleteAll :exec
-DELETE FROM message;    
+-- name: GetProductById :many
+ SELECT FROM "Product"
+ WHERE id = $1;
